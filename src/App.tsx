@@ -1061,7 +1061,9 @@ export function App() {
 
     return window.puppyoneDesktop.watchWorkspace(workspace.path, (event) => {
       if (!event.error) {
-        setWorkspaceRefreshToken((token) => token + 1);
+        if (event.eventType !== "git") {
+          setWorkspaceRefreshToken((token) => token + 1);
+        }
         void refreshGitStatus();
       }
     });

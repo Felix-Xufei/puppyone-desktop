@@ -313,7 +313,7 @@ export function useDesktopGitController({
     return runGitOperation("stage", (rootPath) => stageAllWorkspaceGitChanges(rootPath));
   }, [runGitOperation]);
 
-  const handleStageAndCommitGit = useCallback(async () => {
+  const handleStageAndCommitGit = useCallback(async (message = "") => {
     if (!workspace) return false;
 
     setGitOperationLoading("stage-commit");
@@ -326,7 +326,7 @@ export function useDesktopGitController({
         return false;
       }
 
-      nextStatus = await commitWorkspaceGit(workspace.path, "");
+      nextStatus = await commitWorkspaceGit(workspace.path, message);
       setGitStatus(nextStatus);
       clearGitSelection();
       onWorkspaceContentChanged();
@@ -373,13 +373,13 @@ export function useDesktopGitController({
     return runGitOperation("discard", (rootPath) => discardAllWorkspaceGitChanges(rootPath));
   }, [activeGitStatus, runGitOperation]);
 
-  const handleCommitGit = useCallback(async () => {
+  const handleCommitGit = useCallback(async (message = "") => {
     if (!workspace) return false;
 
     setGitOperationLoading("commit");
     setGitOperationError(null);
     try {
-      const nextStatus = await commitWorkspaceGit(workspace.path, "");
+      const nextStatus = await commitWorkspaceGit(workspace.path, message);
       setGitStatus(nextStatus);
       clearGitSelection();
       onWorkspaceContentChanged();
@@ -392,7 +392,7 @@ export function useDesktopGitController({
     }
   }, [clearGitSelection, onWorkspaceContentChanged, workspace]);
 
-  const handleCommitAndPushGit = useCallback(async () => {
+  const handleCommitAndPushGit = useCallback(async (message = "") => {
     if (!workspace) return false;
 
     const remote = activeGitStatus?.sourceControl.remote;
@@ -408,7 +408,7 @@ export function useDesktopGitController({
     setGitOperationLoading("commit-push");
     setGitOperationError(null);
     try {
-      let nextStatus = await commitWorkspaceGit(workspace.path, "");
+      let nextStatus = await commitWorkspaceGit(workspace.path, message);
       if (nextStatus.sourceControl.remote.canPublish) {
         nextStatus = await publishWorkspaceGitBranch(workspace.path);
       } else {

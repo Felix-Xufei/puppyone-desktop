@@ -3,6 +3,7 @@ import { useScrollableDescendantClasses, type FileIconThemeId } from "@puppyone/
 import {
   Fragment,
   useCallback,
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -45,9 +46,9 @@ export type GitSidebarProps = {
   onUnstageAll: () => Promise<boolean>;
   onDiscardPaths: (paths: string[]) => Promise<boolean>;
   onDiscardAll: () => Promise<boolean>;
-  onStageAndCommit: () => Promise<boolean>;
-  onCommit: () => Promise<boolean>;
-  onCommitAndPush: () => Promise<boolean>;
+  onStageAndCommit: (message?: string) => Promise<boolean>;
+  onCommit: (message?: string) => Promise<boolean>;
+  onCommitAndPush: (message?: string) => Promise<boolean>;
   onPull: () => Promise<boolean>;
   onPush: () => Promise<boolean>;
   onPublish: () => Promise<boolean>;
@@ -127,6 +128,7 @@ export function GitSidebar({
   const [committedExpanded, setCommittedExpanded] = useState(true);
   const [stagedExpanded, setStagedExpanded] = useState(true);
   const [workingExpanded, setWorkingExpanded] = useState(true);
+  const [commitMessageDraft, setCommitMessageDraft] = useState("");
   const [panelHeights, setPanelHeights] = useState<Partial<Record<GitSidebarPanelId, number>>>({});
   const [activeResizeSplit, setActiveResizeSplit] = useState<string | null>(null);
   const sidebarListRef = useRef<HTMLDivElement | null>(null);
@@ -161,6 +163,46 @@ export function GitSidebar({
     canCommit,
   });
   const remoteSection = showRemoteSyncSection && !syncState.setupRequired ? getGitScmSyncSection(status, syncState) : null;
+  const commitMessagePlaceholder =
+    sourceControl?.input.defaultMessage ||
+    sourceControl?.input.placeholder ||
+    "Commit message";
+  const showCommitMessageInput = Boolean(sourceControl) && (
+    showSimpleChangeAction ||
+    stagedResources.length > 0 ||
+    sourceControl?.actions.canCommit === true
+  );
+  const runCommitAction = useCallback(async (operation: (message?: string) => Promise<boolean>) => {
+    const committed = await operation(commitMessageDraft.trim());
+    if (committed) setCommitMessageDraft("");
+  }, [commitMessageDraft]);
+  const submitCommitMessage = useCallback(() => {
+    if (disabled) return;
+    if (stagedPrimaryAction?.kind === "commit") {
+      void runCommitAction(onCommit);
+      return;
+    }
+    if (stagedPrimaryAction?.kind === "commit-push") {
+      void runCommitAction(onCommitAndPush);
+      return;
+    }
+    if (showSimpleChangeAction) {
+      void runCommitAction(onStageAndCommit);
+    }
+  }, [
+    disabled,
+    onCommit,
+    onCommitAndPush,
+    onStageAndCommit,
+    runCommitAction,
+    showSimpleChangeAction,
+    stagedPrimaryAction,
+  ]);
+
+  useEffect(() => {
+    if (!status?.isRepo) setCommitMessageDraft("");
+  }, [status?.isRepo]);
+
   const providerSlot = hostingMode === "puppyone-cloud" ? (
     <PuppyoneCloudProviderSection
       status={status}
@@ -349,6 +391,7 @@ export function GitSidebar({
             action={committedPrimaryAction ? (
               <GitOperationButton
                 className="desktop-git-commit-push-action"
+                variant={committedPrimaryAction.kind === "push" ? "subtle" : "primary"}
                 title={committedPrimaryAction.title}
                 disabled={disabled || committedPrimaryAction.disabled}
                 icon={committedPrimaryAction.icon}
@@ -416,6 +459,7 @@ export function GitSidebar({
                 )}
                 <GitOperationButton
                   className="desktop-git-commit-push-action"
+                  variant={stagedPrimaryAction.kind === "push" ? "subtle" : "primary"}
                   title={stagedPrimaryAction.title}
                   disabled={disabled || stagedPrimaryAction.disabled}
                   icon={stagedPrimaryAction.icon}
@@ -424,8 +468,8 @@ export function GitSidebar({
                   loadingLabel={stagedPrimaryAction.loadingLabel}
                   operationLoading={operationLoading}
                   onClick={() => {
-                    if (stagedPrimaryAction.kind === "commit") void onCommit();
-                    if (stagedPrimaryAction.kind === "commit-push") void onCommitAndPush();
+                    if (stagedPrimaryAction.kind === "commit") void runCommitAction(onCommit);
+                    if (stagedPrimaryAction.kind === "commit-push") void runCommitAction(onCommitAndPush);
                     if (stagedPrimaryAction.kind === "push") void onPush();
                     if (stagedPrimaryAction.kind === "publish") void onPublish();
                   }}
@@ -520,7 +564,7 @@ export function GitSidebar({
                 loadingKey="stage-commit"
                 loadingLabel="Committing..."
                 operationLoading={operationLoading}
-                onClick={() => void onStageAndCommit()}
+                onClick={() => void runCommitAction(onStageAndCommit)}
               />
             </div>
           ) : null}
@@ -590,6 +634,24 @@ export function GitSidebar({
                 <div className="desktop-git-operation-error" role="alert">
                   {operationError}
                 </div>
+              )}
+
+              {showCommitMessageInput && (
+                <label className="desktop-git-commit-message">
+                  <span>Commit message</span>
+                  <input
+                    type="text"
+                    value={commitMessageDraft}
+                    placeholder={commitMessagePlaceholder}
+                    disabled={disabled}
+                    onChange={(event) => setCommitMessageDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+                      event.preventDefault();
+                      submitCommitMessage();
+                    }}
+                  />
+                </label>
               )}
             </div>
 
@@ -936,6 +998,7 @@ function GitScmSyncRow({
 
 function GitOperationButton({
   className,
+  variant = "primary",
   title,
   disabled,
   icon,
@@ -946,6 +1009,7 @@ function GitOperationButton({
   onClick,
 }: {
   className: string;
+  variant?: "primary" | "subtle";
   title: string;
   disabled: boolean;
   icon: GitActionIconKind;
@@ -958,6 +1022,7 @@ function GitOperationButton({
   const loading = operationLoading === loadingKey;
   const buttonClassName = [
     "desktop-git-operation-button",
+    `variant-${variant}`,
     className,
     loading ? "is-loading" : "",
   ].filter(Boolean).join(" ");

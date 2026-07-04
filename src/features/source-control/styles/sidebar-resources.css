@@ -448,6 +448,13 @@ body.desktop-git-sidebar-resizing {
   font-weight: var(--git-weight-strong);
 }
 
+.desktop-git-operation-button.variant-subtle {
+  border: 1px solid color-mix(in srgb, var(--po-border-subtle) 86%, transparent);
+  background: color-mix(in srgb, var(--po-control) 42%, transparent);
+  color: var(--po-text-muted);
+  font-weight: 560;
+}
+
 .desktop-git-stage-commit-action {
   gap: 4px;
   padding: 0 8px;
@@ -460,6 +467,12 @@ body.desktop-git-sidebar-resizing {
   color: var(--desktop-git-primary-fg);
 }
 
+.desktop-git-operation-button.variant-subtle:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--po-border) 78%, transparent);
+  background: color-mix(in srgb, var(--po-text) 8%, var(--po-control));
+  color: var(--po-text);
+}
+
 .desktop-git-stage-commit-action:hover:not(:disabled) {
   background: color-mix(in srgb, var(--po-text) 18%, var(--po-control));
   color: var(--po-text);
@@ -469,6 +482,12 @@ body.desktop-git-sidebar-resizing {
   background: color-mix(in srgb, var(--po-text) 8%, transparent);
   color: var(--po-text-disabled);
   opacity: 1;
+}
+
+.desktop-git-operation-button.variant-subtle:disabled {
+  border-color: color-mix(in srgb, var(--po-border-subtle) 50%, transparent);
+  background: transparent;
+  color: var(--po-text-disabled);
 }
 
 .desktop-git-operation-button.is-loading:disabled {
@@ -544,6 +563,53 @@ body.desktop-git-sidebar-resizing {
   color: var(--po-danger);
   font-size: 11.5px;
   line-height: 1.35;
+}
+
+.desktop-git-commit-message {
+  display: grid;
+  width: var(--git-sidebar-control-width);
+  margin: 0 var(--git-sidebar-control-right-gap) 8px var(--git-sidebar-control-left-gap);
+  gap: 5px;
+}
+
+.desktop-git-commit-message span {
+  color: var(--po-text-subtle);
+  font-size: 10.5px;
+  font-weight: 620;
+  line-height: 1;
+}
+
+.desktop-git-commit-message input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--po-border-subtle) 86%, transparent);
+  border-radius: var(--git-control-radius);
+  background: color-mix(in srgb, var(--po-control) 36%, transparent);
+  color: var(--po-text);
+  font: inherit;
+  font-size: var(--git-font-main);
+  outline: none;
+}
+
+.desktop-git-commit-message input::placeholder {
+  color: var(--po-text-disabled);
+}
+
+.desktop-git-commit-message input:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--po-border) 74%, transparent);
+  background: color-mix(in srgb, var(--po-control) 54%, transparent);
+}
+
+.desktop-git-commit-message input:focus {
+  border-color: color-mix(in srgb, var(--po-accent) 54%, var(--po-border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--po-accent) 14%, transparent);
+}
+
+.desktop-git-commit-message input:disabled {
+  background: transparent;
+  color: var(--po-text-disabled);
 }
 
 .desktop-git-hosting-identity-row {

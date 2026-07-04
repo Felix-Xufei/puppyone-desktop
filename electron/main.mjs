@@ -1636,7 +1636,18 @@ function createWorkspaceWatcher(rootPath) {
   });
 
   entry.watcher = fs.watch(rootPath, { recursive: true }, (eventType, filename) => {
-    if (shouldIgnoreWorkspaceChange(filename)) return;
+    if (isGitMetadataChange(filename)) {
+      entry.lastEvent = {
+        rootPath,
+        eventType: "git",
+        path: typeof filename === "string" ? filename : null,
+      };
+      clearTimeout(entry.debounceTimer);
+      entry.debounceTimer = setTimeout(() => {
+        broadcastWorkspaceChange(entry);
+      }, 200);
+      return;
+    }
 
     entry.lastEvent = {
       rootPath,
@@ -1703,7 +1714,7 @@ function broadcastWorkspaceEditReviewChange(entry, rootPath, request) {
   }
 }
 
-function shouldIgnoreWorkspaceChange(filename) {
+function isGitMetadataChange(filename) {
   if (!filename) return false;
   const normalized = String(filename).replaceAll("\\", "/");
   return normalized === ".git" || normalized.startsWith(".git/");
