@@ -140,15 +140,27 @@ body.data-sidebar-resizing * {
 }
 
 .desktop-explorer-actions button {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 28px;
   width: 28px;
   height: 28px;
+  padding: 0;
   border: 0;
   border-radius: var(--desktop-control-radius);
   background: transparent;
   color: var(--po-text-muted);
+  line-height: 0;
+}
+
+.desktop-explorer-actions button svg {
+  display: block;
+  flex: 0 0 auto;
+  color: currentColor;
+  stroke: currentColor;
+  pointer-events: none;
 }
 
 .desktop-explorer-actions button:hover {

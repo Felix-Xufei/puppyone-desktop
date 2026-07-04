@@ -255,14 +255,20 @@ function appendEditableBlock(target: HTMLElement, element: HTMLElement, sourceLi
   const wrapper = document.createElement("div");
   wrapper.className = "markdown-document-preview__editable-block";
   wrapper.dataset.sourceLine = String(sourceLine + 1);
+  wrapper.title = `Double-click to edit line ${sourceLine + 1}`;
   wrapper.appendChild(element);
+  wrapper.addEventListener("dblclick", (event) => {
+    if (isInteractiveMarkdownTarget(event.target)) return;
+    event.preventDefault();
+    context.onEditLine?.(sourceLine + 1);
+  });
 
   const button = document.createElement("button");
   button.type = "button";
   button.className = "markdown-document-preview__edit-button";
   button.title = `Edit line ${sourceLine + 1}`;
   button.setAttribute("aria-label", `Edit line ${sourceLine + 1}`);
-  button.textContent = "Edit";
+  button.appendChild(createEditIcon());
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -270,6 +276,33 @@ function appendEditableBlock(target: HTMLElement, element: HTMLElement, sourceLi
   });
   wrapper.appendChild(button);
   target.appendChild(wrapper);
+}
+
+function isInteractiveMarkdownTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest("a, button, input, textarea, select, summary, [contenteditable='true']"));
+}
+
+function createEditIcon() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", "13");
+  svg.setAttribute("height", "13");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("aria-hidden", "true");
+
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M21.2 6.8 17.2 2.8a2 2 0 0 0-2.8 0L3 14.2V21h6.8L21.2 9.6a2 2 0 0 0 0-2.8Z");
+  svg.appendChild(path);
+
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  line.setAttribute("d", "m14 5 5 5");
+  svg.appendChild(line);
+
+  return svg;
 }
 
 function renderInline(target: Node, source: string, context: RenderContext) {

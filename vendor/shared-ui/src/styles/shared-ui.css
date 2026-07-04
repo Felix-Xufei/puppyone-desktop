@@ -3,6 +3,7 @@
 
 .po-button,
 .po-icon-button {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -42,10 +43,21 @@
 }
 
 .po-icon-button {
+  flex: 0 0 28px;
   width: 28px;
   height: 28px;
+  padding: 0;
   background: transparent;
   color: var(--po-text-muted);
+  line-height: 0;
+}
+
+.po-icon-button svg {
+  display: block;
+  flex: 0 0 auto;
+  color: currentColor;
+  stroke: currentColor;
+  pointer-events: none;
 }
 
 .po-empty-state {
@@ -115,4 +127,3 @@
   background: color-mix(in srgb, var(--po-info) 13%, transparent);
   color: var(--po-info);
 }
-

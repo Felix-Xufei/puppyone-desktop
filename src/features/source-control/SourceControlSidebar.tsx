@@ -166,7 +166,7 @@ export function GitSidebar({
   const commitMessagePlaceholder =
     sourceControl?.input.defaultMessage ||
     sourceControl?.input.placeholder ||
-    "Commit message";
+    "Describe this commit";
   const showCommitMessageInput = Boolean(sourceControl) && (
     showSimpleChangeAction ||
     stagedResources.length > 0 ||
@@ -1020,6 +1020,11 @@ function GitOperationButton({
   onClick: () => void;
 }) {
   const loading = operationLoading === loadingKey;
+  const unavailable = disabled && !loading;
+  const handleClick = () => {
+    if (disabled) return;
+    onClick();
+  };
   const buttonClassName = [
     "desktop-git-operation-button",
     `variant-${variant}`,
@@ -1034,18 +1039,21 @@ function GitOperationButton({
       title={title}
       aria-label={loading ? loadingLabel : label}
       aria-busy={loading || undefined}
-      disabled={disabled}
-      onClick={onClick}
+      aria-disabled={disabled || undefined}
+      disabled={unavailable}
+      onClick={handleClick}
     >
-      {loading ? <SourceControlDots /> : renderGitActionIcon(icon)}
-      <span className="desktop-git-operation-label">{loading ? loadingLabel : label}</span>
+      <span className="desktop-git-operation-icon" aria-hidden="true">
+        {renderGitActionIcon(icon)}
+      </span>
+      <span className="desktop-git-operation-label">{label}</span>
     </button>
   );
 }
 
-function SourceControlDots() {
+function SourceControlDots({ label = "Loading" }: { label?: string }) {
   return (
-    <span className="desktop-git-loading-dots" data-puppy-loader="dots" role="status" aria-label="Loading">
+    <span className="desktop-git-loading-dots" data-puppy-loader="dots" role="status" aria-label={label}>
       {[0, 1, 2].map((index) => (
         <span key={index} style={{ animationDelay: `${index * 0.16}s` }} />
       ))}

@@ -37,15 +37,27 @@
 }
 
 .desktop-tool-sidebar-icon {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 28px;
   width: 28px;
   height: 28px;
+  padding: 0;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--po-text-muted);
+  line-height: 0;
+}
+
+.desktop-tool-sidebar-icon svg {
+  display: block;
+  flex: 0 0 auto;
+  color: currentColor;
+  stroke: currentColor;
+  pointer-events: none;
 }
 
 .desktop-tool-sidebar-icon:hover {
