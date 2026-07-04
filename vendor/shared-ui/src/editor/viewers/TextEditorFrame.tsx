@@ -1,9 +1,12 @@
 "use client";
 
+import { Code2, Eye } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { EditorSaveButton, type SaveStatus } from "../EditorSaveButton";
 import { PlainTextEditor } from "../PlainTextEditor";
 import type { EditorMode, EditorSaveMode } from "../viewerTypes";
+
+type ModeTogglePlacement = "bottom" | "top";
 
 export type TextEditorFrameProps = {
   documentId: string;
@@ -14,8 +17,17 @@ export type TextEditorFrameProps = {
   onSaveContent?: (content: string) => Promise<void>;
   hideSourceView: boolean;
   saveMode: EditorSaveMode;
-  renderLive: (content: string, controls: { canEdit: boolean; onChange: (content: string) => void }) => ReactNode;
-  renderSource?: (content: string, controls: { canEdit: boolean; onChange: (content: string) => void }) => ReactNode;
+  modeTogglePlacement?: ModeTogglePlacement;
+  liveModeLabel?: string;
+  sourceModeLabel?: string;
+  renderLive: (
+    content: string,
+    controls: { canEdit: boolean; onChange: (content: string) => void; editSourceAtLine: (lineNumber: number) => void },
+  ) => ReactNode;
+  renderSource?: (
+    content: string,
+    controls: { canEdit: boolean; onChange: (content: string) => void; focusLine: number | null },
+  ) => ReactNode;
 };
 
 export function TextEditorFrame({
@@ -27,6 +39,9 @@ export function TextEditorFrame({
   onSaveContent,
   hideSourceView,
   saveMode,
+  modeTogglePlacement = "bottom",
+  liveModeLabel = "Preview",
+  sourceModeLabel = "Source code",
   renderLive,
   renderSource,
 }: TextEditorFrameProps) {
@@ -35,6 +50,7 @@ export function TextEditorFrame({
   const [persistedContent, setPersistedContent] = useState(content);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("clean");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [sourceFocusLine, setSourceFocusLine] = useState<number | null>(null);
   const documentIdRef = useRef(documentId);
   const draftRef = useRef(draft);
   const persistedContentRef = useRef(persistedContent);
@@ -55,6 +71,7 @@ export function TextEditorFrame({
     setPersistedContent(content);
     setSaveStatus("clean");
     setSaveError(null);
+    setSourceFocusLine(null);
   }, [content, defaultMode, documentId, hideSourceView]);
 
   useEffect(() => {
@@ -143,6 +160,11 @@ export function TextEditorFrame({
     void saveContent(draftRef.current, false);
   };
 
+  const editSourceAtLine = (lineNumber: number) => {
+    setSourceFocusLine(Number.isFinite(lineNumber) ? Math.max(1, Math.round(lineNumber)) : 1);
+    setMode("source");
+  };
+
   useEffect(() => {
     if (saveMode !== "auto" || !dirty || !onSaveContent) return undefined;
 
@@ -154,7 +176,10 @@ export function TextEditorFrame({
   }, [dirty, draft, onSaveContent, saveMode]);
 
   return (
-    <section className="editor-host">
+    <section
+      className="editor-host"
+      data-mode-toggle-placement={!hideSourceView ? modeTogglePlacement : undefined}
+    >
       {saveMode === "manual" && (
         <div className="editor-save-overlay">
           <EditorSaveButton status={saveStatus} onSave={save} />
@@ -165,11 +190,11 @@ export function TextEditorFrame({
 
       {mode === "live" ? (
         <div className="editor-live-surface">
-          {renderLive(draft, { canEdit, onChange: setDraft })}
+          {renderLive(draft, { canEdit, onChange: setDraft, editSourceAtLine })}
         </div>
       ) : renderSource ? (
         <div className="editor-live-surface">
-          {renderSource(draft, { canEdit, onChange: setDraft })}
+          {renderSource(draft, { canEdit, onChange: setDraft, focusLine: sourceFocusLine })}
         </div>
       ) : (
         <PlainTextEditor
@@ -181,45 +206,29 @@ export function TextEditorFrame({
       )}
 
       {!hideSourceView && (
-        <div className="editor-mode-toggle" aria-label="Editor mode">
+        <div className="editor-mode-toggle" data-placement={modeTogglePlacement} aria-label="Editor mode">
           <button
             className={mode === "live" ? "active" : ""}
             type="button"
             onClick={() => setMode("live")}
-            title="Live view"
-            aria-label="Live view"
+            title={liveModeLabel}
+            aria-label={liveModeLabel}
+            aria-pressed={mode === "live"}
           >
-            <PencilIcon />
+            <Eye size={14} strokeWidth={2} />
           </button>
           <button
             className={mode === "source" ? "active" : ""}
             type="button"
             onClick={() => setMode("source")}
-            title="Source code"
-            aria-label="Source code"
+            title={sourceModeLabel}
+            aria-label={sourceModeLabel}
+            aria-pressed={mode === "source"}
           >
-            <CodeIcon />
+            <Code2 size={14} strokeWidth={2} />
           </button>
         </div>
       )}
     </section>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-    </svg>
-  );
-}
-
-function CodeIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <polyline points="16 18 22 12 16 6" />
-      <polyline points="8 6 2 12 8 18" />
-    </svg>
   );
 }

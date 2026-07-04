@@ -51,6 +51,10 @@
 
 .desktop-right-sidebar {
   --desktop-right-sidebar-width: clamp(500px, 36vw, 680px);
+  --desktop-terminal-padding-top: 14px;
+  --desktop-terminal-padding-right: 14px;
+  --desktop-terminal-padding-bottom: 16px;
+  --desktop-terminal-padding-left: 16px;
   --po-terminal-bg: var(--po-header);
   --po-terminal-fg: #6d665d;
   --po-terminal-cursor: #80786d;
@@ -167,6 +171,11 @@ body.desktop-right-sidebar-resizing * {
   user-select: none !important;
 }
 
+body.desktop-right-sidebar-resizing .desktop-right-sidebar,
+body.desktop-right-sidebar-resizing .desktop-right-sidebar::before {
+  transition: none;
+}
+
 .desktop-right-sidebar-inner {
   width: var(--desktop-right-sidebar-width);
   height: 100%;
@@ -210,8 +219,13 @@ body.desktop-right-sidebar-resizing * {
 .desktop-terminal-xterm .xterm {
   position: relative;
   box-sizing: border-box;
+  width: 100%;
   height: 100%;
-  padding: 14px 0 16px 16px;
+  padding:
+    var(--desktop-terminal-padding-top)
+    var(--desktop-terminal-padding-right)
+    var(--desktop-terminal-padding-bottom)
+    var(--desktop-terminal-padding-left);
   font-variant-ligatures: none;
 }
 

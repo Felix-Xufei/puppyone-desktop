@@ -15,6 +15,7 @@ export type MarkdownCodeMirrorEditorProps = {
   value: string;
   readOnly: boolean;
   livePreview: boolean;
+  focusLine?: number | null;
   aiEditFile?: AiEditFile | null;
   htmlTrustMode?: MarkdownHtmlTrustMode;
   documentPath?: string;
@@ -29,6 +30,7 @@ export function MarkdownCodeMirrorEditor({
   value,
   readOnly,
   livePreview,
+  focusLine = null,
   aiEditFile = null,
   htmlTrustMode = "safe",
   documentPath = "",
@@ -39,6 +41,7 @@ export function MarkdownCodeMirrorEditor({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
+  const appliedFocusLineRef = useRef<number | null>(null);
   const editableCompartmentRef = useRef(new Compartment());
   const livePreviewCompartmentRef = useRef(new Compartment());
   const aiEditCompartmentRef = useRef(new Compartment());
@@ -131,6 +134,20 @@ export function MarkdownCodeMirrorEditor({
       annotations: externalDocumentUpdate.of(true),
     });
   }, [value]);
+
+  useLayoutEffect(() => {
+    const view = viewRef.current;
+    if (!view || focusLine === null || appliedFocusLineRef.current === focusLine) return;
+
+    const lineNumber = Math.min(Math.max(1, Math.round(focusLine)), view.state.doc.lines);
+    const line = view.state.doc.line(lineNumber);
+    appliedFocusLineRef.current = focusLine;
+    view.dispatch({
+      selection: { anchor: line.from },
+      effects: EditorView.scrollIntoView(line.from, { y: "center" }),
+    });
+    view.focus();
+  }, [focusLine]);
 
   return (
     <div

@@ -678,7 +678,7 @@ export function App() {
       return;
     }
 
-    void openWorkspaceInCurrentWindow(item.workspace.path)
+    void openWorkspaceInNewWindow(item.workspace.path)
       .then(handleWorkspaceOpenResult)
       .catch((error) => {
         setRestoreWorkspaceError(error instanceof Error ? error.message : String(error));

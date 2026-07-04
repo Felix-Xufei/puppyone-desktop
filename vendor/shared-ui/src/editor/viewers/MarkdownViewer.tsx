@@ -1,5 +1,6 @@
 "use client";
 
+import { MarkdownDocumentPreview } from "../markdown/MarkdownDocumentPreview";
 import { MarkdownCodeMirrorEditor } from "../markdown/MarkdownCodeMirrorEditor";
 import type { EditorViewerContext } from "../viewerTypes";
 import { TextEditorFrame } from "./TextEditorFrame";
@@ -13,19 +14,19 @@ export function MarkdownViewer(context: EditorViewerContext) {
       defaultMode="live"
       canEdit={context.canEdit}
       onSaveContent={context.onSaveContent}
-      hideSourceView={context.hideSourceView}
+      hideSourceView={false}
       saveMode={context.saveMode}
+      modeTogglePlacement="top"
+      liveModeLabel="Rendered preview"
+      sourceModeLabel="Markdown source"
       renderLive={(value, controls) => (
-        <MarkdownCodeMirrorEditor
+        <MarkdownDocumentPreview
           value={value}
-          readOnly={!controls.canEdit}
-          livePreview
-          aiEditFile={context.aiEditFile}
           htmlTrustMode={context.htmlTrustMode}
           documentPath={context.document.path}
           markdownLinkGraph={context.markdownLinkGraph}
           markdownAssetUrlResolver={context.markdownAssetUrlResolver}
-          onChange={controls.canEdit ? controls.onChange : undefined}
+          onEditLine={context.canEdit ? controls.editSourceAtLine : undefined}
         />
       )}
       renderSource={(value, controls) => (
@@ -33,6 +34,7 @@ export function MarkdownViewer(context: EditorViewerContext) {
           value={value}
           readOnly={!controls.canEdit}
           livePreview={false}
+          focusLine={controls.focusLine}
           aiEditFile={context.aiEditFile}
           htmlTrustMode={context.htmlTrustMode}
           documentPath={context.document.path}

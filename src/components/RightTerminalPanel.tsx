@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent as ReactDragEvent } from "react";
 import { EXPLORER_TREE_NODE_DRAG_TYPE, type Workspace } from "@puppyone/shared-ui";
 import { FitAddon } from "@xterm/addon-fit";
-import { Terminal, type ITheme } from "@xterm/xterm";
+import { Terminal, type IBufferLine, type ILink, type ILinkProvider, type ITheme } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 
 type RightTerminalPanelProps = {
@@ -86,6 +86,7 @@ export function RightTerminalPanel({ workspace, active }: RightTerminalPanelProp
       fontWeightBold: 700,
       letterSpacing: 0,
       lineHeight: 1.24,
+      reflowCursorLine: true,
       scrollback: 6000,
       theme: terminalTheme,
     });
@@ -103,6 +104,8 @@ export function RightTerminalPanel({ workspace, active }: RightTerminalPanelProp
 
     terminal.loadAddon(fitAddon);
     terminal.open(containerRef.current);
+    disposables.push(terminal.registerLinkProvider(createTerminalLinkProvider(terminal)));
+    fitAndResize();
 
     const writeSystemLine = (message: string) => {
       terminal.writeln(`\x1b[38;5;244m${message}\x1b[0m`);
@@ -165,6 +168,7 @@ export function RightTerminalPanel({ workspace, active }: RightTerminalPanelProp
         void bridge.closeTerminal(result.id);
         return;
       }
+      fitAndResize();
       if (activeRef.current) terminal.focus();
     }).catch((error) => {
       if (disposed) return;
@@ -235,6 +239,155 @@ function hasExplorerNodePath(dataTransfer: DataTransfer) {
 function readExplorerNodePath(dataTransfer: DataTransfer) {
   const value = dataTransfer.getData(EXPLORER_TREE_NODE_DRAG_TYPE).trim();
   return value || null;
+}
+
+function createTerminalLinkProvider(terminal: Terminal): ILinkProvider {
+  return {
+    provideLinks(bufferLineNumber, callback) {
+      const buffer = terminal.buffer.active;
+      const line = buffer.getLine(bufferLineNumber - 1);
+      if (!line) {
+        callback(undefined);
+        return;
+      }
+
+      const text = line.translateToString(true);
+      const links = findTerminalLinks(text)
+        .map((match): ILink | null => {
+          const startColumn = getBufferColumnForStringIndex(line, match.start);
+          const endColumn = getBufferColumnForStringIndex(line, match.end - 1);
+          if (startColumn === null || endColumn === null || endColumn < startColumn) return null;
+
+          return {
+            text: match.text,
+            range: {
+              start: { x: startColumn, y: bufferLineNumber },
+              end: { x: endColumn, y: bufferLineNumber },
+            },
+            decorations: {
+              pointerCursor: true,
+              underline: true,
+            },
+            activate(event) {
+              event.preventDefault();
+              openTerminalLink(match.href);
+            },
+          };
+        })
+        .filter((link): link is ILink => Boolean(link));
+
+      callback(links.length > 0 ? links : undefined);
+    },
+  };
+}
+
+type TerminalLinkMatch = {
+  text: string;
+  href: string;
+  start: number;
+  end: number;
+};
+
+const TERMINAL_LINK_PATTERN = /https?:\/\/[^\s<>"'`]+|(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|\[[0-9a-fA-F:]+\]|(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}):\d{1,5}(?:\/[^\s<>"'`]*)?/g;
+
+function findTerminalLinks(lineText: string): TerminalLinkMatch[] {
+  const matches: TerminalLinkMatch[] = [];
+
+  for (const match of lineText.matchAll(TERMINAL_LINK_PATTERN)) {
+    const rawText = match[0];
+    const rawStart = match.index ?? 0;
+    const text = trimTerminalLinkText(rawText);
+    if (!text) continue;
+
+    const href = normalizeTerminalLinkHref(text);
+    if (!href) continue;
+
+    matches.push({
+      text,
+      href,
+      start: rawStart,
+      end: rawStart + text.length,
+    });
+  }
+
+  return matches;
+}
+
+function trimTerminalLinkText(value: string) {
+  let text = value;
+
+  while (/[.,;!?]$/.test(text)) {
+    text = text.slice(0, -1);
+  }
+
+  while (hasUnbalancedTrailingCloser(text)) {
+    text = text.slice(0, -1);
+  }
+
+  return text;
+}
+
+function hasUnbalancedTrailingCloser(value: string) {
+  const closer = value[value.length - 1];
+  if (!closer || !")]}>".includes(closer)) return false;
+
+  const opener = closer === ")" ? "(" : closer === "]" ? "[" : closer === "}" ? "{" : "<";
+  return countCharacter(value, closer) > countCharacter(value, opener);
+}
+
+function countCharacter(value: string, character: string) {
+  let count = 0;
+  for (const current of value) {
+    if (current === character) count += 1;
+  }
+  return count;
+}
+
+function normalizeTerminalLinkHref(text: string) {
+  const href = /^https?:\/\//i.test(text) ? text : `http://${text}`;
+
+  try {
+    const url = new URL(href);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    if (!url.hostname) return null;
+    if (!/^https?:\/\//i.test(text) && !url.port) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function getBufferColumnForStringIndex(line: IBufferLine, targetIndex: number) {
+  if (targetIndex < 0) return null;
+
+  let stringIndex = 0;
+  for (let columnIndex = 0; columnIndex < line.length; columnIndex += 1) {
+    const cell = line.getCell(columnIndex);
+    if (!cell) continue;
+
+    const width = cell.getWidth();
+    if (width === 0) continue;
+
+    const chars = cell.getChars() || " ";
+    const nextStringIndex = stringIndex + chars.length;
+    if (targetIndex < nextStringIndex) return columnIndex + 1;
+
+    stringIndex = nextStringIndex;
+  }
+
+  return null;
+}
+
+function openTerminalLink(href: string) {
+  const bridge = window.puppyoneDesktop;
+  if (bridge?.openExternalUrl) {
+    void bridge.openExternalUrl(href).catch((error) => {
+      console.warn("Unable to open terminal link:", error);
+    });
+    return;
+  }
+
+  window.open(href, "_blank", "noopener,noreferrer");
 }
 
 function joinWorkspacePath(rootPath: string, nodePath: string) {
