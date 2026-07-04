@@ -11,8 +11,10 @@ import {
   WidgetType,
   dropCursor,
   highlightActiveLine,
+  highlightActiveLineGutter,
   highlightSpecialChars,
   keymap,
+  lineNumbers,
   placeholder,
 } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
@@ -86,6 +88,8 @@ const markdownAssetUrlResolverFacet = Facet.define<MarkdownAssetUrlResolver | nu
 
 export function markdownCodeMirrorBaseExtensions(readOnly: boolean): Extension[] {
   return [
+    lineNumbers(),
+    highlightActiveLineGutter(),
     highlightSpecialChars(),
     history(),
     dropCursor(),

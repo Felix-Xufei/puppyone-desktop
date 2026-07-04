@@ -84,6 +84,14 @@ export async function revealWorkspaceEntryInFinder(rootPath: string, path: strin
   await getDesktopBridge().revealEntryInFinder({ rootPath, path });
 }
 
+export async function openWorkspaceEntryInDefaultApp(rootPath: string, path: string): Promise<void> {
+  await getDesktopBridge().openEntryInDefaultApp({ rootPath, path });
+}
+
+export async function getWorkspaceEntrySystemIcon(rootPath: string, path: string): Promise<string | null> {
+  return (await getDesktopBridge().getEntrySystemIcon({ rootPath, path })).dataUrl;
+}
+
 export async function forgetLastWorkspace(): Promise<void> {
   await getDesktopBridge().forgetLastWorkspace();
 }

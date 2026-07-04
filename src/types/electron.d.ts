@@ -366,6 +366,15 @@ export type WorkspaceRevealEntryRequest = {
   path: string;
 };
 
+export type WorkspaceOpenEntryRequest = {
+  rootPath: string;
+  path: string;
+};
+
+export type WorkspaceEntrySystemIconResult = {
+  dataUrl: string | null;
+};
+
 export type DesktopStoredCloudSession = {
   expires_in?: number;
   expires_at?: number;
@@ -471,6 +480,7 @@ declare global {
         };
       }>;
       openExternalUrl: (href: string) => Promise<{ ok: boolean }>;
+      setWindowZoomFactor?: (zoomFactor: number) => Promise<{ ok: boolean; zoomFactor: number }>;
       getInitialWorkspace: () => Promise<LastWorkspaceResult>;
       getLastWorkspace: () => Promise<LastWorkspaceResult>;
       getRecentWorkspaces: () => Promise<RecentWorkspacesResult>;
@@ -502,6 +512,8 @@ declare global {
       importEntries: (request: WorkspaceImportEntriesRequest) => Promise<WorkspaceImportEntriesResult>;
       deleteEntry: (request: WorkspaceDeleteEntryRequest) => Promise<WorkspaceCreateEntryResult>;
       revealEntryInFinder: (request: WorkspaceRevealEntryRequest) => Promise<{ ok: boolean }>;
+      openEntryInDefaultApp: (request: WorkspaceOpenEntryRequest) => Promise<{ ok: boolean }>;
+      getEntrySystemIcon: (request: WorkspaceOpenEntryRequest) => Promise<WorkspaceEntrySystemIconResult>;
       watchWorkspace: (
         rootPath: string,
         callback: (event: WorkspaceChangedEvent) => void,

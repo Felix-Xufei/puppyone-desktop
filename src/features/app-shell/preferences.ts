@@ -2,6 +2,7 @@ import { isFileIconThemeId, type FileIconThemeId } from "@puppyone/shared-ui";
 import type { PuppyoneWorkspaceConfig } from "../../types/electron";
 import {
   AI_EDIT_ASSIST_STORAGE_KEY,
+  DESKTOP_ZOOM_STORAGE_KEY,
   DEFAULT_SIDEBAR_NAVIGATION_LAYOUT,
   DEFAULT_THEME_MODE,
   FILES_VISIBILITY_STORAGE_KEY,
@@ -11,12 +12,14 @@ import {
   SIDEBAR_NAVIGATION_LAYOUT_STORAGE_KEY,
   THEME_STORAGE_KEY,
   parseAiEditAssistEnabled,
+  parseDesktopZoom,
   parseFilesVisibilitySettings,
   parseGitDisplayMode,
   parseRightSidebarToolsSettings,
   parseSidebarNavigationLayout,
   parseThemeMode,
   type FilesVisibilitySettings,
+  type DesktopZoomLevel,
   type GitDisplayMode,
   type RightSidebarToolsSettings,
   type SidebarNavigationLayout,
@@ -62,6 +65,11 @@ export function readInitialSidebarNavigationLayout(): SidebarNavigationLayout {
 export function readInitialGitDisplayMode(): GitDisplayMode {
   if (typeof window === "undefined") return parseGitDisplayMode(null);
   return parseGitDisplayMode(window.localStorage.getItem(GIT_DISPLAY_MODE_STORAGE_KEY));
+}
+
+export function readInitialDesktopZoom(): DesktopZoomLevel {
+  if (typeof window === "undefined") return parseDesktopZoom(null);
+  return parseDesktopZoom(window.localStorage.getItem(DESKTOP_ZOOM_STORAGE_KEY));
 }
 
 export function readInitialFilesVisibilitySettings(): FilesVisibilitySettings {

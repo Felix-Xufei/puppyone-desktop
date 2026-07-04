@@ -89,6 +89,42 @@
   animation: spin 900ms linear infinite;
 }
 
+.desktop-titlebar-zoom-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  height: var(--desktop-chrome-control-size);
+}
+
+.desktop-titlebar-zoom-step {
+  width: 24px;
+}
+
+.desktop-titlebar-zoom-reset {
+  width: 42px;
+  color: var(--po-text-muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.desktop-titlebar-zoom-reset:disabled {
+  opacity: 1;
+}
+
+.desktop-titlebar-zoom-controls:hover .desktop-titlebar-zoom-reset,
+.desktop-titlebar-zoom-reset:focus-visible {
+  color: var(--po-text);
+}
+
+.desktop-titlebar-open-default-action img {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .desktop-update-titlebar-action.available,
 .desktop-update-titlebar-action.downloaded {
   color: var(--po-accent);

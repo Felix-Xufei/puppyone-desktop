@@ -1,7 +1,7 @@
 "use client";
 
 import { Code2, Eye } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { EditorSaveButton, type SaveStatus } from "../EditorSaveButton";
 import { PlainTextEditor } from "../PlainTextEditor";
 import type { EditorMode, EditorSaveMode } from "../viewerTypes";
@@ -160,10 +160,10 @@ export function TextEditorFrame({
     void saveContent(draftRef.current, false);
   };
 
-  const editSourceAtLine = (lineNumber: number) => {
+  const editSourceAtLine = useCallback((lineNumber: number) => {
     setSourceFocusLine(Number.isFinite(lineNumber) ? Math.max(1, Math.round(lineNumber)) : 1);
     setMode("source");
-  };
+  }, []);
 
   useEffect(() => {
     if (saveMode !== "auto" || !dirty || !onSaveContent) return undefined;

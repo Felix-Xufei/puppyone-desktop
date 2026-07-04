@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FileIconThemeId } from "@puppyone/shared-ui";
 import {
   AI_EDIT_ASSIST_STORAGE_KEY,
+  DESKTOP_ZOOM_STORAGE_KEY,
   FILES_VISIBILITY_STORAGE_KEY,
   FILE_ICON_THEME_STORAGE_KEY,
   GIT_DISPLAY_MODE_STORAGE_KEY,
@@ -21,6 +22,7 @@ import {
   RIGHT_SIDEBAR_WIDTH_STORAGE_KEY,
   SIDEBAR_COLLAPSED_STORAGE_KEY,
   readInitialAiEditAssistEnabled,
+  readInitialDesktopZoom,
   readInitialExplorerWidth,
   readInitialFileIconTheme,
   readInitialFilesVisibilitySettings,
@@ -38,6 +40,7 @@ export function useDesktopPreferences() {
   const [fileIconTheme, setFileIconTheme] = useState<FileIconThemeId>(() => readInitialFileIconTheme());
   const [sidebarNavigationLayout, setSidebarNavigationLayout] = useState<SidebarNavigationLayout>(() => readInitialSidebarNavigationLayout());
   const [gitDisplayMode, setGitDisplayMode] = useState<GitDisplayMode>(() => readInitialGitDisplayMode());
+  const [desktopZoom, setDesktopZoom] = useState(() => readInitialDesktopZoom());
   const [filesVisibilitySettings, setFilesVisibilitySettings] = useState<FilesVisibilitySettings>(() => readInitialFilesVisibilitySettings());
   const [rightSidebarToolsSettings, setRightSidebarToolsSettings] = useState<RightSidebarToolsSettings>(() => readInitialRightSidebarToolsSettings());
   const [aiEditAssistEnabled, setAiEditAssistEnabled] = useState(() => readInitialAiEditAssistEnabled());
@@ -62,6 +65,23 @@ export function useDesktopPreferences() {
   useEffect(() => {
     window.localStorage.setItem(GIT_DISPLAY_MODE_STORAGE_KEY, gitDisplayMode);
   }, [gitDisplayMode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(DESKTOP_ZOOM_STORAGE_KEY, String(desktopZoom));
+  }, [desktopZoom]);
+
+  useEffect(() => {
+    const bridge = window.puppyoneDesktop;
+    if (bridge?.setWindowZoomFactor) {
+      document.body.style.removeProperty("zoom");
+      void bridge.setWindowZoomFactor(desktopZoom).catch((error) => {
+        console.warn("Unable to set desktop zoom:", error);
+      });
+      return;
+    }
+
+    document.body.style.setProperty("zoom", String(desktopZoom));
+  }, [desktopZoom]);
 
   useEffect(() => {
     window.localStorage.setItem(FILES_VISIBILITY_STORAGE_KEY, JSON.stringify(filesVisibilitySettings));
@@ -107,6 +127,7 @@ export function useDesktopPreferences() {
 
   return {
     aiEditAssistEnabled,
+    desktopZoom,
     explorerWidth,
     fileIconTheme,
     filesVisibilitySettings,
@@ -123,6 +144,7 @@ export function useDesktopPreferences() {
     terminalToolEnabled,
     themeMode,
     setAiEditAssistEnabled,
+    setDesktopZoom,
     setExplorerWidth,
     setFileIconTheme,
     setFilesVisibilitySettings,

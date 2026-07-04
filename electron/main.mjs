@@ -445,6 +445,15 @@ function registerIpcHandlers() {
     return { ok: true };
   });
 
+  ipcMain.handle("window:set-zoom-factor", async (event, zoomFactor) => {
+    const normalizedZoomFactor = normalizeWindowZoomFactor(zoomFactor);
+    event.sender.setZoomFactor(normalizedZoomFactor);
+    return {
+      ok: true,
+      zoomFactor: normalizedZoomFactor,
+    };
+  });
+
   ipcMain.handle("workspace:get-last", async () => {
     return getLastWorkspaceResult();
   });
@@ -609,6 +618,23 @@ function registerIpcHandlers() {
     });
     shell.showItemInFolder(targetPath);
     return { ok: true };
+  });
+
+  ipcMain.handle("workspace:open-entry-default-app", async (_event, request) => {
+    const targetPath = await requireExistingWorkspaceEntryPath(request, "open");
+    const errorMessage = await shell.openPath(targetPath);
+    if (errorMessage) {
+      throw new Error(`Unable to open entry: ${errorMessage}`);
+    }
+    return { ok: true };
+  });
+
+  ipcMain.handle("workspace:get-entry-system-icon", async (_event, request) => {
+    const targetPath = await requireExistingWorkspaceEntryPath(request, "read icon for");
+    const icon = await app.getFileIcon(targetPath, { size: "normal" });
+    return {
+      dataUrl: icon.isEmpty() ? null : icon.toDataURL(),
+    };
   });
 
   ipcMain.handle("workspace:watch-start", async (event, request) => {
@@ -1349,6 +1375,29 @@ function requireSafeExternalUrl(value) {
   }
 
   return url.toString();
+}
+
+function normalizeWindowZoomFactor(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(Math.max(parsed, 0.75), 1.25);
+}
+
+async function requireExistingWorkspaceEntryPath(request, operationLabel) {
+  const rootPath = request?.rootPath;
+  const entryPath = request?.path;
+  if (typeof rootPath !== "string" || rootPath.trim().length === 0) {
+    throw new Error("Workspace root path is required.");
+  }
+  if (typeof entryPath !== "string" || entryPath.trim().length === 0) {
+    throw new Error("Entry path is required.");
+  }
+
+  const targetPath = resolveLocalWorkspacePath(rootPath, entryPath);
+  await fs.promises.stat(targetPath).catch((error) => {
+    throw new Error(`Unable to ${operationLabel} entry: ${error.message}`);
+  });
+  return targetPath;
 }
 
 function normalizeCloudRequestHeaders(headers) {

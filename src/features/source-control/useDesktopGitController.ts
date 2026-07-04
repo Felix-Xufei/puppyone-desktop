@@ -54,9 +54,12 @@ export function useDesktopGitController({
 }: UseDesktopGitControllerOptions) {
   const workspacePathRef = useRef<string | null>(null);
   const branchSwitcherRef = useRef<HTMLDivElement>(null);
+  const gitStatusRef = useRef<GitStatusSnapshot | null>(null);
+  const gitStatusPathRef = useRef<string | null>(null);
   const [gitStatus, setGitStatus] = useState<GitStatusSnapshot | null>(null);
   const [gitStatusPath, setGitStatusPath] = useState<string | null>(null);
   const [gitStatusLoading, setGitStatusLoading] = useState(false);
+  const [gitStatusRefreshing, setGitStatusRefreshing] = useState(false);
   const [gitStatusError, setGitStatusError] = useState<string | null>(null);
   const [selectedGitCommitId, setSelectedGitCommitId] = useState<string | null>(null);
   const [selectedGitWorkingFile, setSelectedGitWorkingFile] = useState<GitWorkingSelection | null>(null);
@@ -77,6 +80,14 @@ export function useDesktopGitController({
     ? Math.max(0, activeGitStatus.sourceControl.remote.behind)
     : 0;
 
+  useEffect(() => {
+    gitStatusRef.current = gitStatus;
+  }, [gitStatus]);
+
+  useEffect(() => {
+    gitStatusPathRef.current = gitStatusPath;
+  }, [gitStatusPath]);
+
   const localBranches = useMemo(
     () => activeGitStatus?.branches.filter((branch) => !branch.remote) ?? [],
     [activeGitStatus],
@@ -87,8 +98,11 @@ export function useDesktopGitController({
   );
 
   const applyGitStatus = useCallback((nextStatus: GitStatusSnapshot, rootPath?: string) => {
+    const nextPath = rootPath ?? workspace?.path ?? null;
+    gitStatusRef.current = nextStatus;
+    gitStatusPathRef.current = nextPath;
     setGitStatus(nextStatus);
-    setGitStatusPath(rootPath ?? workspace?.path ?? null);
+    setGitStatusPath(nextPath);
   }, [workspace?.path]);
 
   const clearGitSelection = useCallback(() => {
@@ -98,8 +112,11 @@ export function useDesktopGitController({
 
   useEffect(() => {
     workspacePathRef.current = workspace?.path ?? null;
+    gitStatusRef.current = null;
+    gitStatusPathRef.current = null;
     setGitStatus(null);
     setGitStatusPath(null);
+    setGitStatusRefreshing(false);
     setGitStatusError(null);
     setSelectedGitCommitId(null);
     setSelectedGitWorkingFile(null);
@@ -115,23 +132,38 @@ export function useDesktopGitController({
     setPendingBranchSwitch(null);
   }, [workspace?.path]);
 
-  const refreshGitStatus = useCallback(async () => {
+  const refreshGitStatus = useCallback(async (options: { background?: boolean } = {}) => {
     if (!workspace) return;
     const rootPath = workspace.path;
-    setGitStatusLoading(true);
-    setGitStatusError(null);
+    const background = options.background === true && gitStatusPathRef.current === rootPath && gitStatusRef.current !== null;
+    if (background) {
+      setGitStatusRefreshing(true);
+    } else {
+      setGitStatusLoading(true);
+      setGitStatusError(null);
+    }
     try {
       const nextStatus = await getWorkspaceGitStatus(rootPath);
       if (workspacePathRef.current !== rootPath) return;
+      gitStatusRef.current = nextStatus;
+      gitStatusPathRef.current = rootPath;
       setGitStatus(nextStatus);
       setGitStatusPath(rootPath);
+      setGitStatusError(null);
     } catch (error) {
       if (workspacePathRef.current !== rootPath) return;
-      setGitStatus(null);
-      setGitStatusPath(null);
+      if (!background) {
+        gitStatusRef.current = null;
+        gitStatusPathRef.current = null;
+        setGitStatus(null);
+        setGitStatusPath(null);
+      }
       setGitStatusError(error instanceof Error ? error.message : String(error));
     } finally {
-      if (workspacePathRef.current === rootPath) setGitStatusLoading(false);
+      if (workspacePathRef.current === rootPath) {
+        if (background) setGitStatusRefreshing(false);
+        else setGitStatusLoading(false);
+      }
     }
   }, [workspace]);
 
@@ -550,6 +582,7 @@ export function useDesktopGitController({
     gitStatus,
     gitStatusError,
     gitStatusLoading,
+    gitStatusRefreshing,
     gitStatusPath,
     gitWorkingFileDiff,
     gitWorkingFileDiffError,

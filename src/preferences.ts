@@ -1,5 +1,6 @@
 export type ThemeMode = "system" | "light" | "dark";
 export type GitDisplayMode = "simple" | "professional";
+export type DesktopZoomLevel = 0.8 | 0.9 | 1 | 1.1 | 1.2;
 
 export type SidebarNavigationLayout =
   | "bottom-horizontal"
@@ -26,6 +27,7 @@ export const FILES_VISIBILITY_STORAGE_KEY = "puppyone.desktop.filesVisibility";
 export const RIGHT_SIDEBAR_TOOLS_STORAGE_KEY = "puppyone.desktop.rightSidebarTools";
 export const AI_EDIT_ASSIST_STORAGE_KEY = "puppyone.desktop.aiEditAssist";
 export const GIT_DISPLAY_MODE_STORAGE_KEY = "puppyone.desktop.gitDisplayMode";
+export const DESKTOP_ZOOM_STORAGE_KEY = "puppyone.desktop.zoom";
 
 export const DEFAULT_THEME_MODE: ThemeMode = "system";
 export const DEFAULT_GIT_DISPLAY_MODE: GitDisplayMode = "simple";
@@ -61,6 +63,8 @@ export const DEFAULT_RIGHT_SIDEBAR_TOOLS_SETTINGS: RightSidebarToolsSettings = {
   order: [...RIGHT_SIDEBAR_TOOL_IDS],
 };
 export const DEFAULT_AI_EDIT_ASSIST_ENABLED = false;
+export const DESKTOP_ZOOM_LEVELS = [0.8, 0.9, 1, 1.1, 1.2] as const satisfies readonly DesktopZoomLevel[];
+export const DEFAULT_DESKTOP_ZOOM: DesktopZoomLevel = 1;
 
 export const SIDEBAR_NAVIGATION_LAYOUT_OPTIONS = [
   { value: "bottom-horizontal", label: "Bottom", placement: "bottom" },
@@ -78,6 +82,15 @@ export function parseThemeMode(value: string | null | undefined): ThemeMode {
 
 export function parseGitDisplayMode(value: string | null | undefined): GitDisplayMode {
   return value === "professional" || value === "simple" ? value : DEFAULT_GIT_DISPLAY_MODE;
+}
+
+export function parseDesktopZoom(value: string | null | undefined): DesktopZoomLevel {
+  const parsed = Number(value);
+  return isDesktopZoomLevel(parsed) ? parsed : DEFAULT_DESKTOP_ZOOM;
+}
+
+export function isDesktopZoomLevel(value: unknown): value is DesktopZoomLevel {
+  return typeof value === "number" && DESKTOP_ZOOM_LEVELS.some((level) => Math.abs(level - value) < 0.001);
 }
 
 export function parseSidebarNavigationLayout(value: string | null | undefined): SidebarNavigationLayout {

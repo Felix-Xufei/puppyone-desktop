@@ -329,6 +329,7 @@ export function App() {
   }, []);
   const {
     aiEditAssistEnabled,
+    desktopZoom,
     explorerWidth,
     fileIconTheme,
     filesVisibilitySettings,
@@ -344,6 +345,7 @@ export function App() {
     terminalToolEnabled,
     themeMode,
     setAiEditAssistEnabled,
+    setDesktopZoom,
     setExplorerWidth,
     setFileIconTheme,
     setFilesVisibilitySettings,
@@ -359,10 +361,12 @@ export function App() {
   const [workspaceRefreshToken, setWorkspaceRefreshToken] = useState(0);
   const [latestAiEditRequest, setLatestAiEditRequest] = useState<AiEditRequest | null>(null);
   const [activeDataPath, setActiveDataPath] = useState<string | null>(null);
+  const [activeDataNode, setActiveDataNode] = useState<DataNode | null>(null);
   const [restoringWorkspace, setRestoringWorkspace] = useState(true);
   const [restoreWorkspaceError, setRestoreWorkspaceError] = useState<string | null>(null);
   const switcherRef = useRef<HTMLDivElement>(null);
   const workspacePathRef = useRef<string | null>(null);
+  const gitStatusRefreshTimerRef = useRef<number | null>(null);
   const [createEntryDraft, setCreateEntryDraft] = useState<DesktopCreateEntryDraft | null>(null);
   const [nodeActionMenu, setNodeActionMenu] = useState<DesktopNodeActionMenuDraft | null>(null);
 
@@ -552,6 +556,7 @@ export function App() {
     setBranchSwitcherOpen(false);
     setLatestAiEditRequest(null);
     setActiveDataPath(null);
+    setActiveDataNode(null);
     setCreateEntryDraft(null);
     setNodeActionMenu(null);
   }, [workspace?.path]);
@@ -754,8 +759,9 @@ export function App() {
     setSwitcherOpen(false);
   }, [cloudEnabled, cloudSessionRestoring, cloudWorkspaceAvailable, workspaceIsCloud]);
 
-  const handleActiveDataPathChange = useCallback((path: string | null) => {
+  const handleActiveDataPathChange = useCallback((path: string | null, node: DataNode | null = null) => {
     setActiveDataPath(path);
+    setActiveDataNode(node);
   }, []);
 
   const handleFilesVisibilitySettingsChange = useCallback((nextSettings: FilesVisibilitySettings) => {
@@ -1059,15 +1065,36 @@ export function App() {
   useEffect(() => {
     if (!workspace || workspaceIsCloud || !window.puppyoneDesktop?.watchWorkspace) return undefined;
 
-    return window.puppyoneDesktop.watchWorkspace(workspace.path, (event) => {
+    const stopWatching = window.puppyoneDesktop.watchWorkspace(workspace.path, (event) => {
       if (!event.error) {
         if (event.eventType !== "git") {
           setWorkspaceRefreshToken((token) => token + 1);
         }
-        void refreshGitStatus();
+        if (gitStatusRefreshTimerRef.current !== null) {
+          window.clearTimeout(gitStatusRefreshTimerRef.current);
+        }
+        gitStatusRefreshTimerRef.current = window.setTimeout(() => {
+          gitStatusRefreshTimerRef.current = null;
+          void refreshGitStatus({ background: true });
+        }, 300);
       }
     });
+
+    return () => {
+      if (gitStatusRefreshTimerRef.current !== null) {
+        window.clearTimeout(gitStatusRefreshTimerRef.current);
+        gitStatusRefreshTimerRef.current = null;
+      }
+      stopWatching();
+    };
   }, [refreshGitStatus, workspace, workspaceIsCloud]);
+
+  useEffect(() => () => {
+    if (gitStatusRefreshTimerRef.current !== null) {
+      window.clearTimeout(gitStatusRefreshTimerRef.current);
+      gitStatusRefreshTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!workspace || workspaceIsCloud || !aiEditAssistEnabled) {
@@ -1203,6 +1230,7 @@ export function App() {
       setActiveView("data");
       setSidebarCollapsed(false);
       setActiveDataPath(nextPath);
+      setActiveDataNode(kind === "folder" ? null : createActiveDataNode(nextPath, kind));
       setWorkspaceRefreshToken((token) => token + 1);
       if (!workspaceIsCloud) void refreshGitStatus();
     } catch (error) {
@@ -1252,6 +1280,11 @@ export function App() {
       await dataPort.renameNode(previousPath, nextName);
       setNodeActionMenu(null);
       setActiveDataPath((current) => remapActivePathAfterRename(current, previousPath, nextPath));
+      setActiveDataNode((current) => (
+        current?.path === previousPath
+          ? { ...current, id: nextPath, name: nextName, path: nextPath }
+          : current
+      ));
       setWorkspaceRefreshToken((token) => token + 1);
       if (!workspaceIsCloud) void refreshGitStatus();
     } catch (error) {
@@ -1276,6 +1309,9 @@ export function App() {
       setNodeActionMenu(null);
       setActiveDataPath((current) => (
         current === node.path || current?.startsWith(`${node.path}/`) ? null : current
+      ));
+      setActiveDataNode((current) => (
+        current?.path === node.path || current?.path.startsWith(`${node.path}/`) ? null : current
       ));
       setWorkspaceRefreshToken((token) => token + 1);
       if (!workspaceIsCloud) void refreshGitStatus();
@@ -1452,14 +1488,24 @@ export function App() {
   );
 
   const desktopTerminalEnabled = terminalToolEnabled && !workspaceIsCloud;
+  const activePreviewFilePath = !workspaceIsCloud && activeDataNode && activeDataNode.type !== "folder"
+    ? activeDataNode.path
+    : null;
 
   const titlebarActions = (
     <DesktopTitlebarActions
+      activeFilePath={activePreviewFilePath}
+      desktopZoom={desktopZoom}
       desktopUpdates={desktopUpdates}
       terminalSidebarOpen={terminalSidebarOpen && desktopTerminalEnabled}
       terminalToolEnabled={desktopTerminalEnabled}
+      workspacePath={!workspaceIsCloud ? workspace?.path ?? null : null}
       onClearTerminal={() => {
         setTerminalResetToken((token) => token + 1);
+        setSwitcherOpen(false);
+      }}
+      onDesktopZoomChange={(zoom) => {
+        setDesktopZoom(zoom);
         setSwitcherOpen(false);
       }}
       onToggleTerminal={() => {
@@ -1628,4 +1674,20 @@ export function App() {
       </DesktopOverlayPortal>
     </div>
   );
+}
+
+function createActiveDataNode(path: string, kind: DesktopCreateEntryKind): DataNode {
+  const pathSegments = path.split("/").filter(Boolean);
+  const name = pathSegments.length > 0 ? pathSegments[pathSegments.length - 1] : path;
+  return {
+    id: path,
+    name,
+    path,
+    type: getCreatedDataNodeType(kind),
+  };
+}
+
+function getCreatedDataNodeType(kind: DesktopCreateEntryKind): DataNode["type"] {
+  if (kind === "csv") return "spreadsheet";
+  return kind;
 }

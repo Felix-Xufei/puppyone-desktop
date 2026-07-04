@@ -196,14 +196,8 @@ function appendList(target: HTMLElement, items: ListItem[], sourceLine: number, 
 
 function appendCodeBlock(target: HTMLElement, language: string, codeText: string, sourceLine: number, context: RenderContext) {
   const wrapper = document.createElement("div");
-  wrapper.className = "markdown-document-preview__code-block";
-
-  if (language) {
-    const label = document.createElement("div");
-    label.className = "markdown-document-preview__code-language";
-    label.textContent = language;
-    wrapper.appendChild(label);
-  }
+  wrapper.className = "markdown-document-preview__preview-frame markdown-document-preview__code-block";
+  appendPreviewFrameLabel(wrapper, normalizeBlockLabel(language || "text"));
 
   const pre = document.createElement("pre");
   const code = document.createElement("code");
@@ -215,7 +209,11 @@ function appendCodeBlock(target: HTMLElement, language: string, codeText: string
 
 function appendTable(target: HTMLElement, rows: string[][], sourceLine: number, context: RenderContext) {
   const wrapper = document.createElement("div");
-  wrapper.className = "markdown-document-preview__table-wrap";
+  wrapper.className = "markdown-document-preview__preview-frame markdown-document-preview__table-wrap";
+  appendPreviewFrameLabel(wrapper, "table");
+
+  const scroller = document.createElement("div");
+  scroller.className = "markdown-document-preview__table-scroll";
   const table = document.createElement("table");
 
   rows.forEach((row, rowIndex) => {
@@ -228,13 +226,14 @@ function appendTable(target: HTMLElement, rows: string[][], sourceLine: number, 
     table.appendChild(tr);
   });
 
-  wrapper.appendChild(table);
+  scroller.appendChild(table);
+  wrapper.appendChild(scroller);
   appendEditableBlock(target, wrapper, sourceLine, context);
 }
 
 function appendHtmlBlock(target: HTMLElement, source: string, sourceLine: number, context: RenderContext) {
   const wrapper = document.createElement("div");
-  wrapper.className = "markdown-document-preview__html-block";
+  wrapper.className = "markdown-document-preview__preview-frame markdown-document-preview__html-block";
 
   const sanitized = createSanitizedBlockHtmlFragment(source);
   if (context.htmlTrustMode === "safe" && !sanitized.supported) {
@@ -242,8 +241,19 @@ function appendHtmlBlock(target: HTMLElement, source: string, sourceLine: number
     return;
   }
 
-  wrapper.appendChild(sanitized.fragment);
+  appendPreviewFrameLabel(wrapper, "html");
+  const content = document.createElement("div");
+  content.className = "markdown-document-preview__html-content";
+  content.appendChild(sanitized.fragment);
+  wrapper.appendChild(content);
   appendEditableBlock(target, wrapper, sourceLine, context);
+}
+
+function appendPreviewFrameLabel(target: HTMLElement, labelText: string) {
+  const label = document.createElement("div");
+  label.className = "markdown-document-preview__preview-label";
+  label.textContent = labelText;
+  target.appendChild(label);
 }
 
 function appendEditableBlock(target: HTMLElement, element: HTMLElement, sourceLine: number, context: RenderContext) {
@@ -536,6 +546,13 @@ function isVoidHtmlTag(tagName: string): boolean {
     "track",
     "wbr",
   ].includes(tagName);
+}
+
+function normalizeBlockLabel(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "text";
+  const firstToken = trimmed.split(/\s+/)[0] ?? trimmed;
+  return firstToken.replace(/[{}()[\],:;]+$/g, "").toLowerCase() || "text";
 }
 
 function escapeRegExp(value: string): string {

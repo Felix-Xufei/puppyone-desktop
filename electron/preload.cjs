@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld("puppyoneDesktop", {
   listCloudAccessPointDirectory: (request) => ipcRenderer.invoke("cloud:access-point-list-directory", request),
   getCloudAccessPointSemantics: (request) => ipcRenderer.invoke("cloud:access-point-semantics", request),
   openExternalUrl: (href) => ipcRenderer.invoke("system:open-external-url", href),
+  setWindowZoomFactor: (zoomFactor) => ipcRenderer.invoke("window:set-zoom-factor", zoomFactor),
   getInitialWorkspace: () => ipcRenderer.invoke("window:get-initial-workspace"),
   getLastWorkspace: () => ipcRenderer.invoke("workspace:get-last"),
   getRecentWorkspaces: () => ipcRenderer.invoke("workspace:get-recent"),
@@ -41,6 +42,8 @@ contextBridge.exposeInMainWorld("puppyoneDesktop", {
   importEntries: (request) => ipcRenderer.invoke("workspace:import-entries", request),
   deleteEntry: (request) => ipcRenderer.invoke("workspace:delete-entry", request),
   revealEntryInFinder: (request) => ipcRenderer.invoke("workspace:reveal-entry-in-finder", request),
+  openEntryInDefaultApp: (request) => ipcRenderer.invoke("workspace:open-entry-default-app", request),
+  getEntrySystemIcon: (request) => ipcRenderer.invoke("workspace:get-entry-system-icon", request),
   watchWorkspace: (rootPath, callback) => {
     const listener = (_event, payload) => {
       if (payload?.rootPath === rootPath) callback(payload);

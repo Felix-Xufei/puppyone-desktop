@@ -1,5 +1,6 @@
 .editor-host {
   position: relative;
+  container-type: inline-size;
   display: flex;
   width: 100%;
   height: 100%;
@@ -187,6 +188,7 @@
 }
 
 .office-document-preview {
+  container-type: inline-size;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -208,6 +210,18 @@
   box-shadow: 0 12px 28px color-mix(in srgb, var(--po-shadow) 10%, transparent);
   font-size: 13px;
   line-height: 1.65;
+}
+
+@container (min-width: 1180px) {
+  .office-document-page {
+    width: min(1180px, calc(100cqw - 96px));
+  }
+}
+
+@container (min-width: 1480px) {
+  .office-document-page {
+    width: min(1360px, calc(100cqw - 112px));
+  }
 }
 
 .office-document-page h1,
@@ -539,6 +553,7 @@
   min-width: 38px;
   padding: 0 10px 0 8px;
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .code-codemirror-editor .cm-activeLine,
@@ -1009,6 +1024,7 @@ button.editor-save-chip {
 }
 
 .plain-text-editor {
+  container-type: inline-size;
   width: 100%;
   height: 100%;
   overflow: auto;
@@ -1043,6 +1059,18 @@ button.editor-save-chip {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   tab-size: 2;
+}
+
+@container (min-width: 1180px) {
+  .plain-text-editor__rail {
+    max-width: min(1280px, calc(100cqw - 96px));
+  }
+}
+
+@container (min-width: 1480px) {
+  .plain-text-editor__rail {
+    max-width: min(1480px, calc(100cqw - 112px));
+  }
 }
 
 .plain-text-editor__surface[data-technical="true"] {
@@ -1115,8 +1143,28 @@ button.editor-save-chip {
   min-height: 1.68em;
 }
 
+.markdown-codemirror-editor .cm-gutters {
+  border-right: 1px solid var(--po-editor-line);
+  background: color-mix(in srgb, var(--po-markdown-bg, var(--po-editor-bg)) 94%, var(--po-surface));
+  color: var(--po-text-disabled);
+}
+
+.markdown-codemirror-editor .cm-lineNumbers .cm-gutterElement {
+  min-width: 38px;
+  padding: 0 10px 0 8px;
+  font-family: var(--po-font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.markdown-codemirror-editor .cm-activeLineGutter {
+  background: color-mix(in srgb, var(--po-accent) 9%, transparent);
+}
+
 .markdown-document-preview {
   box-sizing: border-box;
+  --po-markdown-preview-text-width: var(--po-markdown-editor-text-width, 724px);
+  container-type: inline-size;
   width: 100%;
   height: 100%;
   overflow: auto;
@@ -1126,7 +1174,7 @@ button.editor-save-chip {
 
 .markdown-document-preview__page {
   box-sizing: border-box;
-  width: min(var(--po-markdown-editor-text-width, 724px), 100%);
+  width: min(var(--po-markdown-preview-text-width, 724px), 100%);
   min-height: 100%;
   margin: 0 auto;
   padding: 56px 32px 84px;
@@ -1136,6 +1184,22 @@ button.editor-save-chip {
   font-weight: 450;
   line-height: 1.68;
   overflow-wrap: anywhere;
+}
+
+@container (min-width: 1180px) {
+  .markdown-codemirror-editor,
+  .markdown-document-preview {
+    --po-markdown-editor-text-width: min(1180px, calc(100cqw - 96px));
+    --po-markdown-preview-text-width: min(1180px, calc(100cqw - 96px));
+  }
+}
+
+@container (min-width: 1480px) {
+  .markdown-codemirror-editor,
+  .markdown-document-preview {
+    --po-markdown-editor-text-width: min(1360px, calc(100cqw - 112px));
+    --po-markdown-preview-text-width: min(1360px, calc(100cqw - 112px));
+  }
 }
 
 .markdown-document-preview__page > *:first-child {
@@ -1153,8 +1217,8 @@ button.editor-save-chip {
 
 .markdown-document-preview__edit-button {
   position: absolute;
-  top: 0;
-  right: -34px;
+  top: 4px;
+  right: 4px;
   box-sizing: border-box;
   display: inline-flex;
   width: 24px;
@@ -1337,26 +1401,34 @@ button.editor-save-chip {
   background: var(--po-markdown-quote-border, var(--po-divider));
 }
 
-.markdown-document-preview__code-block {
+.markdown-document-preview__preview-frame {
   overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--po-markdown-quote-border, var(--po-border-subtle)) 78%, transparent);
   border-radius: 6px;
   background: var(--po-markdown-code-bg, color-mix(in srgb, var(--po-control) 34%, transparent));
   color: var(--po-markdown-code-text, color-mix(in srgb, var(--po-text) 76%, var(--po-text-muted)));
 }
 
+.markdown-document-preview__preview-label,
 .markdown-document-preview__code-language {
+  display: flex;
+  align-items: center;
+  width: fit-content;
   min-height: 28px;
+  max-width: calc(100% - 24px);
   padding: 6px 12px 0;
   color: var(--po-markdown-subtle, var(--po-text-subtle));
   font-family: var(--po-font-mono);
   font-size: 11px;
   font-weight: 650;
   line-height: 18px;
+  text-transform: lowercase;
+  white-space: nowrap;
 }
 
 .markdown-document-preview__code-block pre {
   margin: 0;
-  padding: 12px;
+  padding: 8px 12px 12px;
   overflow: auto;
   font-family: var(--po-font-mono);
   font-size: 12.5px;
@@ -1374,27 +1446,44 @@ button.editor-save-chip {
 
 .markdown-document-preview__table-wrap {
   max-width: 100%;
-  overflow: auto;
+  overflow: hidden;
   margin: 0 0 14px;
 }
 
-.markdown-document-preview__table-wrap table {
+.markdown-document-preview__table-scroll {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.markdown-document-preview__table-scroll table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-.markdown-document-preview__table-wrap th,
-.markdown-document-preview__table-wrap td {
+.markdown-document-preview__table-scroll th,
+.markdown-document-preview__table-scroll td {
   padding: 7px 9px;
   border: 1px solid var(--po-markdown-quote-border, var(--po-border-subtle));
   text-align: left;
   vertical-align: top;
 }
 
-.markdown-document-preview__table-wrap th {
+.markdown-document-preview__table-scroll th {
   color: var(--po-markdown-text, var(--po-text));
   font-weight: 700;
+}
+
+.markdown-document-preview__html-content {
+  padding: 8px 12px 12px;
+}
+
+.markdown-document-preview__html-content > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-document-preview__html-content > *:last-child {
+  margin-bottom: 0;
 }
 
 .markdown-document-preview__page img {
@@ -1423,7 +1512,7 @@ button.editor-save-chip {
 
 @media (max-width: 820px) {
   .markdown-document-preview__edit-button {
-    right: 0;
+    right: 4px;
   }
 }
 

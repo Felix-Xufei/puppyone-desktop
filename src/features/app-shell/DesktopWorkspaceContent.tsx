@@ -59,7 +59,7 @@ type DesktopWorkspaceContentProps = {
   dataPort: DataWorkspacePort | null;
   desktopUpdates: DesktopUpdatesController;
   git: DesktopGitController;
-  onActiveDataPathChange: (path: string | null) => void;
+  onActiveDataPathChange: (path: string | null, node?: DataNode | null) => void;
   onCreateEntryMenu: (parentPath: string | null, anchorRect: DOMRect) => void;
   onFilesVisibilitySettingsChange: (settings: FilesVisibilitySettings) => void;
   onNavigate: (view: DesktopView) => void;
