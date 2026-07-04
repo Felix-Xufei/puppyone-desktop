@@ -3,6 +3,8 @@ dist/
 release/
 .vite/
 .vite-temp/
+.home/
+.npm-cache/
 
 .DS_Store
 *.log

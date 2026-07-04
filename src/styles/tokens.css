@@ -75,6 +75,15 @@
   --po-tree-guide: color-mix(in srgb, var(--po-sidebar) 87%, var(--po-text));
   --po-editor-bg: #fbf6ed;
   --po-editor-line: rgba(73, 55, 35, 0.14);
+  --po-markdown-bg: #f8f5ef;
+  --po-markdown-text: #3f3a33;
+  --po-markdown-muted: #756d63;
+  --po-markdown-subtle: #9b9287;
+  --po-markdown-syntax: #b2a89b;
+  --po-markdown-link: #3f6f8a;
+  --po-markdown-code-bg: rgba(73, 55, 35, 0.065);
+  --po-markdown-code-text: #4f4941;
+  --po-markdown-quote-border: rgba(91, 82, 72, 0.24);
   --po-diff-added-bg: rgba(22, 163, 74, 0.10);
   --po-diff-added-text: #166534;
   --po-diff-removed-bg: rgba(220, 38, 38, 0.10);

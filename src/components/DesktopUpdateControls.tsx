@@ -79,8 +79,7 @@ export function DesktopUpdateTitlebarButton({
   const visible = state.status === "available"
     || state.status === "downloading"
     || state.status === "downloaded"
-    || state.status === "blocked"
-    || state.status === "error";
+    || state.status === "blocked";
 
   if (!visible) return null;
 

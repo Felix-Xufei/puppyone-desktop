@@ -560,11 +560,11 @@ function FilesSettingsView({
     <section className="desktop-utility-view desktop-settings-view">
       <div className="desktop-utility-body desktop-settings-body">
         <div className="desktop-settings-section desktop-files-settings-section">
-          <SettingsSectionHeader title="Git Ignore" />
+          <SettingsSectionHeader title="Hidden files" />
 
-          <SettingsGroup title="Ignored files">
+          <SettingsGroup title="File visibility">
             <div className="desktop-settings-line desktop-settings-toggle-line desktop-files-toggle-line">
-              <span>Show hidden files</span>
+              <span>Show hidden and excluded files</span>
               <label className="desktop-settings-switch">
                 <input
                   type="checkbox"
